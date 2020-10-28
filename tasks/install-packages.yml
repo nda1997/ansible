@@ -1,0 +1,20 @@
+---
+- name : install package for selinux
+  package :
+    name : {{ items }}
+    state : present
+  with_items :
+    - libselinux-python
+    - libsemanage-python
+  when : nginx_is_el | bool and nginx_install_epel_repo | bool
+- name : install nginx packages from offcial repo for EL distribution
+  yum :
+    name : "{{ nginx_pkgs }}"
+    state : present
+    enablerepo="nginx"
+- name : install nginx packages for all os distributions
+  package :
+    name : {{ nginx_pkgs }}
+    state : present
+    environment : {{ nginx_env }}
+    when : not nginx_is_el|bool or not nginx_official_repo

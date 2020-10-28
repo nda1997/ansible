@@ -1,0 +1,66 @@
+---
+## cai dat selinux , iptables, firewalld
+- name : setselinux
+  selinux :
+    policy : targeted
+    state : enforcing
+- name : set selinux boolean to allow nginx to set rlimnit
+  seboolean :
+      name : httpd_setrlimit
+      state : yes
+      persistent : yes
+- name : install  selinux python module
+  package :
+    name : {{ nginx_python_selinux_pkgs | default(omit) }}
+    state : present
+    when : ansible_os_family == "RedHat" or ansible_os_family == " Debian"
+- name : allow nginx to listen on tcp port 9000
+  seport :
+    ports : 9000
+    proto : tcp
+    setype : nginx_port_t
+    state : present
+- name : firewalld
+  firewalld :
+    port : 80/tcp
+    pernament : true
+    immediate : yes
+    state : enable
+## anotherway
+# - name : firewalld
+    # firewalld :
+      # port : {{ item }}
+      # pernament : true
+      # immediate : yes
+      # state : enable
+    # with_item :
+      # - nginx
+      # - php-fpm
+      # - mariadb-server
+
+- name : start iptables
+  systemd :
+    name : iptables
+    state : present
+- name : reload systemd
+  systemd :
+    deamon_reload : yes
+- name : start and enable service
+  service :
+    name : iptables
+    state : present
+    enable : yes
+- name : iptables
+  iptables :
+    table : nat
+    chain : PREROUTING
+    in_interface : eth0
+    protocol : tcp
+    match : tcp
+    destination_port : 80
+    jump : REDIRECT
+    to_port : 9000
+    comment : redirect web traffic
+  become : yes
+
+
