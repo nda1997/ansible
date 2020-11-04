@@ -1,0 +1,67 @@
+---
+- name : update os
+  command : yum update
+- name : add repository
+  yum :
+    name : epel-release
+    state : present
+- name : install
+  yum :
+    name : redis
+    state : present
+- name : append to file
+  lineinfile :
+    path : /etc/redis.conf
+    regexp : '^{{ item.option }}\s'
+    line : '{{item.option}} {{ item.value }}'
+  with_items :
+    - option : appendonly
+      value : yes
+    - option : appendfsync
+      value : everysec
+- name : set toi da ram cho redis
+  lineinfile :
+    path : /etc/sysctl.conf
+    regexp : '^vm.overcommit_memory'
+    line : 'vm.overcommit_memory = 1'
+    state : present
+- name : create group
+  group :
+    name : redis
+    state : present
+    system : yes
+- name : create user
+  user :
+    name : redis
+    password : 1
+    state : present
+    append : yes
+    shell : /bin/bash
+    group : redis
+  - notify :
+      - reload redis
+- name : run
+  service :
+    name : redis
+    state : started
+    enable : yes
+- name : set attribute file
+  file :
+    path : /etc/redis.conf
+    state : file
+    owner : redis
+    group : redis
+    mode : 775
+- name : create tempfile
+   tempfile :
+     state : directory
+     prefix : redis
+   register : tmp_dir
+  tags : molecule-idempotence-notest
+- name : xoa file temp
+  file :
+    path : "{{ tmp_dir.path }}"
+    state : absent
+  when : tmp_dir.path is defined
+  tags : molecule-idempotence-notest
+

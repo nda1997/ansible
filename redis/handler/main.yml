@@ -1,0 +1,6 @@
+---
+- name : reload redis
+  service :
+    name : " {{ redis_servoce }} "
+    state : reload
+    
