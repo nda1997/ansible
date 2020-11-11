@@ -1,0 +1,26 @@
+---
+### ADD cac dong duoi day vao inventory
+#( [router]
+#  <hosname> ansible_host=<ip_router>
+#[all:vars]
+#ansible_user=admin
+#ansible_password=123
+#ansible_connection=network_cli
+#ansbile_become="yes"
+#ansible_become_method="enable"
+#ansible_netowrk_os=ios)
+
+- name : enable service
+  ios_config :
+    lines :
+      - hostname R1-01
+      - exit
+      - ntp logging
+      - ntp authenticate
+      - ntp authentication-key 10 md5 key-string
+      - ntp trusted-key 10
+      - ntp source <interface.
+      - ntp server <ntp server> key 10
+      - exit
+      - show ntp status
+      - show ntp associations

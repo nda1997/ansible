@@ -1,0 +1,40 @@
+---
+- name : install ntp
+  yum :
+    name : ntp
+    state : present
+- name : start ntp
+  service :
+    name : ntpd
+    state : started
+    enable : yes
+    pattern : "/ntpd"
+###### - name : copy ntp conf file
+    # template :
+        # src : ntp.conf.j2
+        # dest : /etc/ntp.conf
+        # notify : - restart ntp
+- name : them pool vao file config
+  lineinfile :
+    path : /etc/ntp.conf
+    line : {{ item }}
+  with_items :
+    - server 0.asia.pool.ntp.org
+    - server 1.asia.pool.ntp.org
+    - server 2.asia.pool.ntp.org
+    - server 3.asia.pool.ntp.org
+    owner : ntp
+    group : ntp
+    mode : 0664
+- name : them mang ket noi den ntp server
+  include_vars : "{{ ntp_network }}"
+  lineinfile :
+    path : /etc/ntp.conf
+    regexp : " restrict ::1 "
+    insertafter : " ::1 "
+    line : "{{ ntp_network }}"
+  lineinfile :
+    path : /etc/ntp.conf
+    line : ' logfile /var/log/ntp.log'
+- import_tasks : configure.yml
+- import_tasks : router-cisco.yml

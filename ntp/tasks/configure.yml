@@ -1,0 +1,44 @@
+---
+- name : chinh sua firewalld
+  firewalld :
+    port : 123/tcp
+    service : ntpd
+    pernament : true
+    immediate : yes
+    state : enabled
+  notify :
+    - reload firewalld
+- name : tao user va group
+  group :
+    name : ntp
+    state : present
+  user :
+    name : ntp
+    password : 1
+    state : present
+    group : ntpd
+    append : yes
+    system : yes
+- name : set permission
+  acl :
+    path : /etc/ntp.conf
+    entity : ntp
+    etype : group
+    permissions : rwx
+    state : present
+- name : verify server time sync
+  command : "{{ item }}"
+  with-items :
+    - ntpq -p
+    - date -R
+### or command :  ntpdate -q 0.asia.pool.ntp.org 1.asia.pool.ntp.org
+- name : set key md5
+  lineinfile :
+    path : /etc/ntp/keys
+    line : " 10 M Key "
+- name : set key md5
+  lineinfile :
+    path : /etc/ntp.conf
+    line : "trustedkey 10 "
+  notify : restart ntpd
+ 

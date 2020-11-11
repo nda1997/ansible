@@ -1,0 +1,11 @@
+---
+- name : reload firewalld
+  service :
+    name : firewalld
+    state : reload
+- name : restart ntpd
+  service :
+    name : "{{ ntp_service_name }} "
+    state : restarted
+
+
