@@ -1,0 +1,61 @@
+---
+- name : install php for nginx
+  yum :
+    name : {{ items }}
+    enablerepo : remi ,
+    state : present
+    when : ansbile_os_family == " CentOS" and ansible_distribution_version == "7"
+  with_items :
+    - php-fpm
+    - php-common
+    - remi-php70
+    - php-opcache
+    - php-pecl-apcu
+    - php-pear
+    - php-pdo
+    - php-mysqlnd
+    - php-pgsql
+    - php-mongo
+    - php-pecl-memcache
+- name : start php
+  service :
+    name : php-fpm
+    state : started
+    enabled : yes
+    runlevel : 235
+- name : change user and group to nginx
+  lineinfile :
+    path : /etc/php-fpm.d/www.conf
+    regexp : ' user  : '
+    line : 'user = nginx '
+    state : present
+  lineinfile :
+    path : /etc/php-fpm.d/www.conf
+    regexp : ' group '
+    line : 'group = nginx '
+  lineinfife :
+    path : /etc/php-fpm.d/www.conf
+    regexp : ' listen '
+    line : ' listen - /run/php-fpm/php7.sock'
+    state : present
+  lineinfile :
+    path : /etc/php-fpm.d/www.conf
+    regexp : ' listen.owner '
+    line : ' listen,owner = nginx '
+    state : present
+  lineinfile :
+    path : /etc/php-fpm.d/www.conf
+    regexp : ' listen.group '
+    line : ' listen.group = nginx '
+    state : present
+- name : phan quyen thu muc
+  acl :
+    path : /var/lib/php
+    entry : 'default:group:nginx:rwx'
+    state : present
+- name : start service
+  service :
+    name : php-fpm
+    state : started
+    enable : yes
+    

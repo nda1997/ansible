@@ -1,0 +1,79 @@
+---
+## cai dat lamp
+- hosts : centos7
+  become : true
+  remote_user : root
+  vars :
+    items :
+    - httpd
+    - php-fpm
+    - php
+    - mariadb
+    - mariadb-server
+    - git
+    - libselinux-python
+    - libsemanage-python
+  tasks:
+    - name : install httpd
+      yum : {{ items }}
+      state : latest
+    - name : open firewalld
+      - firewalld :
+        service: httpd
+        state : enable
+        pernament : true
+        port : 80/tcp
+        immediate : yes
+      - firewalld :
+        service : {{ items }}
+        state : enable
+        pernament : true
+        immediate : yes
+    - name : enable httpd
+      service :
+        name : httpd
+        enable : yes
+        state : started
+    - name : set selinux
+      selinux :
+      policy : targeted
+      state : permissive
+    - name : set seboolen
+      seboolean :
+        name : httpd_can_network_connect_db
+        state : yes
+        persistent : yes
+    - name : restart network
+      service :
+        name : network
+        state : restarted
+        args : all
+    - name : set hostname
+      hostname:
+        name : web1
+    - name : create group
+      group  :
+        name : webadmin
+        state : present
+        system : yes
+    - name : create user
+      user :
+        name : adminweb
+        password : 1
+        append: yes
+        group : webadmin
+        shell : /bin/bash
+        system : yes
+        state : present
+    - name : move to work directory
+      command : cd /var/www/html/
+    - name : set file permission
+      file :
+        path : /var/www/html/
+        owner : adminweb
+        group : webadmin
+        mode : u=rwx, g=rx, o=rw
+    - name : creat default page
+      copy :
+        content : " Hello "
+          dest : /var/www/html/index.html
