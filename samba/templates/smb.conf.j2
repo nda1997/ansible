@@ -1,0 +1,31 @@
+      [global]
+      workgroup = WORKGROUP
+      server string = My Samba Server
+      netbios name = centos
+      security = user
+      map to guest = bad user
+      dns proxy = no
+      ##-------Share file--------##
+      [PublicShare]
+      path = /home/public
+      browsable = yes
+      writable = yes
+      guest ok = yes
+      read only = no
+      create mask = 0644
+      directory mask = 0755
+      [private]
+      path = /home/private
+      valid users = @usersmb
+      guest ok = no
+      writable = yes
+      browsable = yes
+      create mask = 0644
+      directory mask = 0755
+      [printers]
+      comment = All Printers
+      path = /var/spool/samba
+      browseable = no
+      guest ok = no
+      writable = No
+      printable = yes"

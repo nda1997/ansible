@@ -1,0 +1,8 @@
+handler :
+  - name: Restart service
+    ansible.builtin.service:
+      name: {{items}}
+      state: restarted
+      with_items :
+        - smb
+        - nmb

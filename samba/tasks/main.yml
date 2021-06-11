@@ -1,0 +1,143 @@
+---
+- name: update
+  yum :
+    name : epel-release
+    state : present
+    command  : yum update -y
+- name : install samba server
+  yum :
+    name : samba
+    state : latest
+- name : start service
+  ansible.builtin.service :
+    name :
+      - smb
+      - nmb
+    state : started
+    enabled : yes
+- name: permit traffic in default zone for  service
+  ansible.posix.firewalld:
+    service: smb
+    permanent: yes
+    state: enabled
+- name : reload firewalld
+  ansible.builtin.service :
+    name : firewalld
+    state : restarted
+- name : add group smb
+  ansible.builtin.group:
+    name : smbadmin
+    state : present
+- name : add user smb
+  ansible.builtin.user :
+    name : smb
+    comment : samba_user
+    group : smbadmin
+- name : backup file configure
+  ansible.builtin.copy :
+    src : /etc/samba/smb.conf
+    dest : /etc/samba/smb.conf.bak
+    owner : root
+    group : root
+    mode : '0700'
+  ansible.builtin.file :
+    src : /etc/samba/smb.conf
+    state : absent
+- name : create file configure
+  ansible.builtin.file :
+    path : /etc/samba/smb.conf
+    state : touch
+    mode : '0755'
+- name : change configure
+  blockinfile :
+    path : /etc/samba/smb.conf
+    block : |
+      "[global]
+      workgroup = WORKGROUP
+      server string = My Samba Server
+      netbios name = centos
+      security = user
+      map to guest = bad user
+      dns proxy = no
+      ##-------Share file--------##
+      [PublicShare]
+      path = /home/public
+      browsable = yes
+      writable = yes
+      guest ok = yes
+      read only = no
+      create mask = 0644
+      directory mask = 0755
+      [private]
+      path = /home/private
+      valid users = @usersmb
+      guest ok = no
+      writable = yes
+      browsable = yes
+      create mask = 0644
+      directory mask = 0755
+      [printers]
+      comment = All Printers
+      path = /var/spool/samba
+      browseable = no
+      guest ok = no
+      writable = No
+      printable = yes"
+#- name: Template a file to /etc/samba/smb.conf
+#  ansible.builtin.template:
+#    src: /template/smb.conf.j2
+#    dest: /etc/samba/smb.conf
+#### if not work try this
+#"""- name : configure samba file
+#  lineinfile:
+#    path : /etc/samba/smb.conf
+#    regexp : '^homes'
+#    insertafter : '^[homes]'
+#    line : {{items}}
+#  with_items:
+#    - path = /home/public
+#    - guest ok = yes
+#    - create mask = 0644
+#    - directory mask = 0755
+#- name : add more configure
+#  path : /etc/samba/smb.conf
+#  regexp : '^0775'
+#  insertafter : '0775'
+#  line : '[private]'
+#  blockinfile :
+#    path : /etc/samba/smb.conf
+#    insertafter : '^[private]'
+#    block : |
+#      {{item.option}} {{item.value}}
+#    marker : "# {mark} ANSIBLE MANAGED BLOCK {{ item.option }}"
+#  loop :
+#    - { option : path = , value : /home/private }
+#    - {option : valid users =, value :  @usersmb }
+#    - {option : guest ok = , value : no }
+#    - {option : writable = , value : yes}
+#    - {option : browsable = ,value : yes}
+#    - {option : create mask = , value : 0644 }
+#    - {option : directory mask =, value : 0755}"""
+- name : create sharefolder
+  ansible.builtin.file :
+    path : /home/public
+    state : directory
+- name : create privatefolder
+  ansible.builtin.file :
+    path : /home/private
+    state: directory
+    owner : smb
+    group : smbadmin
+- name : setup account for login private
+  ansible.builtin.shell : >-
+    set -o pipefail;
+    pdbedit --user={{item.name  }} >/dev/null 2>&1;
+    smbpasswd -s -a {{item.name}}
+  args:
+    executable : /bin/bash
+  register : samba_passwd
+  with_items :
+    - usersmb
+  notify :
+    - Restart service
+
