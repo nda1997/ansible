@@ -131,8 +131,8 @@
 - name : setup account for login private
   ansible.builtin.shell : >-
     set -o pipefail;
-    pdbedit --user={{item.name  }} >/dev/null 2>&1;
-    smbpasswd -s -a {{item.name}}
+    pdbedit --user={{ item }} >/dev/null 2>&1;
+    smbpasswd -s -a {{ item }}
   args:
     executable : /bin/bash
   register : samba_passwd
